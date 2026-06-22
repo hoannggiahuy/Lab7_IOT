@@ -1,0 +1,209 @@
+{
+  "status": "PASS",
+  "backend": "fallback_contour",
+  "frames_processed": 50,
+  "count_in": 1,
+  "count_out": 1,
+  "crossing_events": [
+    {
+      "event_type": "LINE_CROSSING_DETECTED",
+      "severity": "WARNING",
+      "track_id": 1,
+      "class_name": "moving_object",
+      "confidence": 0.4945,
+      "direction": "down",
+      "counter_updated": "count_in",
+      "centroid": [
+        310,
+        263
+      ],
+      "bbox": [
+        249,
+        207,
+        372,
+        320
+      ],
+      "count_in": 1,
+      "count_out": 0,
+      "line_orientation": "horizontal",
+      "line_position": 0.5,
+      "frame_index": 14,
+      "explanation": "Track 1 (moving_object) crossed the horizontal line toward down.",
+      "action_hint": "Update occupancy/count dashboard; require rule validation before controlling an actuator."
+    },
+    {
+      "event_type": "LINE_CROSSING_DETECTED",
+      "severity": "WARNING",
+      "track_id": 1,
+      "class_name": "moving_object",
+      "confidence": 0.4945,
+      "direction": "up",
+      "counter_updated": "count_out",
+      "centroid": [
+        310,
+        217
+      ],
+      "bbox": [
+        249,
+        161,
+        372,
+        274
+      ],
+      "count_in": 1,
+      "count_out": 1,
+      "line_orientation": "horizontal",
+      "line_position": 0.5,
+      "frame_index": 39,
+      "explanation": "Track 1 (moving_object) crossed the horizontal line toward up.",
+      "action_hint": "Update occupancy/count dashboard; require rule validation before controlling an actuator."
+    }
+  ],
+  "last_records": [
+    {
+      "track_id": 1,
+      "class_name": "moving_object",
+      "confidence": 0.4945,
+      "bbox": [
+        249,
+        41,
+        372,
+        154
+      ],
+      "centroid": [
+        310,
+        97
+      ],
+      "age_frames": 50,
+      "trajectory": [
+        [
+          310,
+          335
+        ],
+        [
+          310,
+          347
+        ],
+        [
+          310,
+          359
+        ],
+        [
+          310,
+          371
+        ],
+        [
+          310,
+          383
+        ],
+        [
+          310,
+          385
+        ],
+        [
+          310,
+          373
+        ],
+        [
+          310,
+          361
+        ],
+        [
+          310,
+          349
+        ],
+        [
+          310,
+          337
+        ],
+        [
+          310,
+          325
+        ],
+        [
+          310,
+          313
+        ],
+        [
+          310,
+          301
+        ],
+        [
+          310,
+          289
+        ],
+        [
+          310,
+          277
+        ],
+        [
+          310,
+          265
+        ],
+        [
+          310,
+          253
+        ],
+        [
+          310,
+          241
+        ],
+        [
+          310,
+          229
+        ],
+        [
+          310,
+          217
+        ],
+        [
+          310,
+          205
+        ],
+        [
+          310,
+          193
+        ],
+        [
+          310,
+          181
+        ],
+        [
+          310,
+          169
+        ],
+        [
+          310,
+          157
+        ],
+        [
+          310,
+          145
+        ],
+        [
+          310,
+          133
+        ],
+        [
+          310,
+          121
+        ],
+        [
+          310,
+          109
+        ],
+        [
+          310,
+          97
+        ]
+      ],
+      "count_in": 1,
+      "count_out": 1,
+      "backend": "fallback_contour",
+      "frame_index": 49
+    }
+  ],
+  "snapshots": [
+    "data\\snapshots\\demo_crossing_014.jpg",
+    "data\\snapshots\\demo_crossing_039.jpg"
+  ]
+}

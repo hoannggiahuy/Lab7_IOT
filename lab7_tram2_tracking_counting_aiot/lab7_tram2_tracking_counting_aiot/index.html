@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lab 7 mở rộng - Trạm 2 Tracking & Counting</title>
+  <style>
+    :root { --navy:#102a43; --blue:#1769aa; --cyan:#0ea5a8; --orange:#f59e0b; --bg:#eef3f8; --card:#fff; --muted:#62748a; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:var(--bg); color:#15243a; }
+    header { background:linear-gradient(120deg,var(--navy),#1d4f78); color:white; padding:20px 28px; }
+    header h1 { margin:0; font-size:25px; }
+    header p { margin:8px 0 0; opacity:.9; }
+    main { padding:18px; display:grid; grid-template-columns:350px 1fr; gap:16px; }
+    .card { background:var(--card); border-radius:14px; box-shadow:0 3px 16px rgba(15,42,67,.10); padding:16px; }
+    .full { grid-column:1 / -1; }
+    h2 { margin:0 0 12px; font-size:19px; }
+    h3 { margin:18px 0 8px; font-size:15px; }
+    label { display:block; margin-top:10px; font-size:13px; font-weight:700; }
+    input,select,button { width:100%; margin-top:5px; padding:9px 10px; border:1px solid #c8d4e1; border-radius:8px; font-size:14px; }
+    button { border:0; background:var(--blue); color:#fff; font-weight:700; cursor:pointer; }
+    button.secondary { background:#536779; }
+    button.danger { background:#b83232; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    #stream { width:100%; min-height:360px; max-height:70vh; object-fit:contain; background:#111827; border-radius:12px; }
+    .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:12px; }
+    .stat { background:#f5f8fb; border:1px solid #dce5ee; border-radius:10px; padding:12px; text-align:center; }
+    .stat b { display:block; font-size:25px; color:var(--blue); }
+    .stat span { color:var(--muted); font-size:12px; }
+    .hint { margin-top:12px; background:#eaf5ff; border-left:4px solid var(--blue); padding:10px; line-height:1.45; font-size:13px; }
+    .status { margin-top:10px; padding:9px; border-radius:8px; background:#f3f6f9; font-size:13px; }
+    pre { margin:8px 0 0; background:#101827; color:#d7f8e7; padding:12px; border-radius:10px; max-height:300px; overflow:auto; white-space:pre-wrap; }
+    .log-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+    .badge { display:inline-block; margin:3px; padding:4px 9px; border-radius:999px; background:#e3ebf4; font-size:12px; }
+    @media(max-width:900px){ main{grid-template-columns:1fr}.full{grid-column:auto}.stats{grid-template-columns:1fr 1fr}.log-grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Lab 7 mở rộng — Trạm 2: Tracking & Counting</h1>
+  <p>YOLO detection → giữ object ID qua nhiều frame → phát hiện cắt vạch → count IN/OUT → log và visual event.</p>
+</header>
+<main>
+  <section class="card">
+    <h2>1. Cấu hình trạm</h2>
+    <label>Nguồn camera</label>
+    <input id="source" value="0" />
+
+    <label>Confidence threshold</label>
+    <input id="confidence" type="number" min="0.05" max="0.95" step="0.05" value="0.35" />
+
+    <label>Class filter</label>
+    <input id="classFilter" value="person" placeholder="person,car,bottle" />
+
+    <label>Model YOLO</label>
+    <input id="modelPath" value="yolov8n.pt" />
+
+    <div class="row">
+      <div>
+        <label>Hướng vạch</label>
+        <select id="orientation">
+          <option value="horizontal">Ngang</option>
+          <option value="vertical">Dọc</option>
+        </select>
+      </div>
+      <div>
+        <label>Vị trí vạch</label>
+        <input id="linePosition" type="number" min="0.10" max="0.90" step="0.05" value="0.55" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Max distance</label>
+        <input id="maxDistance" type="number" min="20" max="300" value="90" />
+      </div>
+      <div>
+        <label>Max missed</label>
+        <input id="maxMissed" type="number" min="1" max="60" value="12" />
+      </div>
+    </div>
+
+    <label>Detect mỗi N frame</label>
+    <input id="detectEvery" type="number" min="1" max="10" value="1" />
+
+    <button onclick="startStream()">Bắt đầu Tracking</button>
+    <button class="secondary" onclick="stopStream()">Dừng Stream</button>
+    <button class="danger" onclick="resetCounter()">Reset ID và bộ đếm</button>
+    <button class="secondary" onclick="checkModel()">Kiểm tra model</button>
+
+    <div id="modelStatus" class="status">Chưa kiểm tra model.</div>
+    <div class="hint">
+      <b>Thao tác:</b> Giữ class <code>person</code>, đứng trước camera rồi di chuyển qua vạch. Mỗi người có một ID. Khi centroid đổi từ một phía sang phía còn lại, hệ thống tăng IN hoặc OUT.
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. Live Tracking</h2>
+    <img id="stream" alt="Camera tracking stream" />
+    <div>
+      <span class="badge">bounding box</span><span class="badge">class + confidence</span>
+      <span class="badge">object ID</span><span class="badge">trajectory</span><span class="badge">line crossing event</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="countIn">0</b><span>COUNT IN / DOWN / RIGHT</span></div>
+      <div class="stat"><b id="countOut">0</b><span>COUNT OUT / UP / LEFT</span></div>
+      <div class="stat"><b id="occupancy">0</b><span>OCCUPANCY ƯỚC TÍNH</span></div>
+      <div class="stat"><b id="activeTracks">0</b><span>TRACK ĐANG HOẠT ĐỘNG</span></div>
+    </div>
+    <pre id="eventOut">Chưa có event.</pre>
+  </section>
+
+  <section class="card full">
+    <h2>3. Log và minh chứng nộp bài</h2>
+    <div class="log-grid">
+      <button onclick="loadLog('tracking_log.csv')">Xem tracking_log.csv</button>
+      <button onclick="loadLog('counting_event_log.csv')">Xem counting_event_log.csv</button>
+      <button onclick="loadLog('vision_event_log.csv')">Xem vision_event_log.csv</button>
+    </div>
+    <pre id="logOut">Chưa tải log.</pre>
+    <div class="hint">
+      Ảnh sự kiện được lưu trong <code>data/snapshots/</code>. Hãy thử confidence 0.25, 0.50, 0.70 và thay <code>max_distance</code> để quan sát ID bị đổi hoặc giữ ổn định.
+    </div>
+  </section>
+</main>
+<script>
+let statsTimer = null;
+let sessionId = 'station2_' + Date.now();
+function value(id){ return document.getElementById(id).value; }
+function queryParams(){
+  return new URLSearchParams({
+    source:value('source'), confidence:value('confidence'), class_filter:value('classFilter'),
+    model_path:value('modelPath'), line_orientation:value('orientation'), line_position:value('linePosition'),
+    max_distance:value('maxDistance'), max_missed:value('maxMissed'), detect_every:value('detectEvery'),
+    session_id:sessionId
+  });
+}
+function startStream(){
+  document.getElementById('stream').src = '/video_feed?' + queryParams().toString();
+  if(statsTimer) clearInterval(statsTimer);
+  statsTimer = setInterval(refreshStats, 700);
+}
+function stopStream(){
+  document.getElementById('stream').removeAttribute('src');
+  if(statsTimer){ clearInterval(statsTimer); statsTimer = null; }
+}
+async function refreshStats(){
+  const res = await fetch('/stats?session_id=' + encodeURIComponent(sessionId));
+  const js = await res.json();
+  document.getElementById('countIn').textContent = js.count_in;
+  document.getElementById('countOut').textContent = js.count_out;
+  document.getElementById('occupancy').textContent = js.occupancy_estimate;
+  document.getElementById('activeTracks').textContent = js.active_tracks;
+  document.getElementById('eventOut').textContent = JSON.stringify({backend:js.backend,inference_time_ms:js.inference_time_ms,processing_time_ms:js.processing_time_ms,last_event:js.last_event}, null, 2);
+}
+async function resetCounter(){
+  await fetch('/reset?session_id=' + encodeURIComponent(sessionId), {method:'POST'});
+  await refreshStats();
+}
+async function checkModel(){
+  const res = await fetch('/model-info?model_path=' + encodeURIComponent(value('modelPath')));
+  const js = await res.json();
+  document.getElementById('modelStatus').textContent = js.backend + ' — ' + (js.message || ('Số class: ' + js.num_classes));
+}
+async function loadLog(name){
+  const res = await fetch('/logs/' + name);
+  const js = await res.json();
+  document.getElementById('logOut').textContent = js.content || js.message || JSON.stringify(js,null,2);
+}
+checkModel();
+</script>
+</body>
+</html>

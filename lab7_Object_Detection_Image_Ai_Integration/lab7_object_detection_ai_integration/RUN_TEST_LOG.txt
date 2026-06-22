@@ -1,0 +1,8 @@
+LOCAL_PIPELINE_TEST_PASS
+{
+  "annotated_image_exists": true,
+  "detection_log_exists": true,
+  "vision_event_log_exists": true,
+  "backend": "ultralytics",
+  "num_detections": 1
+}

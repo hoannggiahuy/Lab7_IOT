@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lab 7 - Object Detection / Image AI Integration</title>
+  <style>
+    :root { --blue:#174A7C; --light:#F5F8FC; --orange:#EF7D22; --line:#D9E2EF; --green:#238B45; --red:#B42318; }
+    body { margin:0; font-family: Arial, sans-serif; background:#f3f6fb; color:#1e293b; }
+    header { background:linear-gradient(90deg, #0f3e6f, #1967a3); color:white; padding:18px 28px; }
+    header h1 { margin:0 0 6px 0; font-size:26px; }
+    header p { margin:0; opacity:.92; }
+    main { padding:22px; max-width:1220px; margin:auto; }
+    .grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:18px; }
+    .card { background:white; border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:0 4px 14px rgba(15, 23, 42, .06); }
+    h2 { font-size:19px; margin:0 0 12px 0; color:var(--blue); }
+    h3 { font-size:16px; margin:16px 0 8px; color:#334155; }
+    label { display:block; font-size:13px; font-weight:bold; margin:8px 0 4px; }
+    input, select, button { font-size:14px; border-radius:8px; border:1px solid #cbd5e1; padding:9px 10px; }
+    input[type="text"], input[type="number"] { width:100%; box-sizing:border-box; }
+    input[type="file"] { width:100%; box-sizing:border-box; background:#fff; }
+    button { background:var(--blue); color:white; border:none; cursor:pointer; margin:6px 4px 6px 0; }
+    button.secondary { background:#475569; }
+    button.orange { background:var(--orange); }
+    button.green { background:var(--green); }
+    button.danger { background:var(--red); }
+    button:hover { filter:brightness(.95); }
+    .note { background:#f8fafc; border-left:4px solid var(--orange); padding:10px 12px; border-radius:8px; font-size:14px; line-height:1.45; }
+    .stream-wrap { background:#0b1220; border-radius:12px; overflow:hidden; min-height:330px; display:flex; justify-content:center; align-items:center; }
+    #streamImg { max-width:100%; display:none; }
+    .placeholder { color:#cbd5e1; text-align:center; padding:40px; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .pill { display:inline-block; padding:5px 9px; border-radius:99px; background:#e0f2fe; color:#075985; font-size:12px; margin:3px; }
+    .imgs { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .imgs img { width:100%; border:1px solid var(--line); border-radius:10px; background:white; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th, td { border-bottom:1px solid #e2e8f0; padding:7px; text-align:left; vertical-align:top; }
+    th { background:#eff6ff; color:#1e3a8a; }
+    pre { background:#0f172a; color:#e2e8f0; padding:12px; border-radius:10px; overflow:auto; max-height:260px; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:900px){ .grid,.two,.imgs{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Lab 7 - Object Detection / Image AI Integration</h1>
+  <p>Từ luồng camera ở Lab 6 đến class, confidence, bounding box, visual event và dashboard.</p>
+</header>
+<main>
+  <div class="note">
+    <b>Mạch nối từ Lab 6:</b> Lab 6 đã đưa camera/laptop cam/IP cam vào hệ thống như cảm biến thị giác. Lab 7 giữ luồng chính là <b>camera laptop</b>, sau đó thêm model nhận diện để thấy trong khung hình có đối tượng gì. Hãy đặt một vật trước camera rồi quan sát bounding box và confidence thay đổi.
+  </div>
+
+  <div class="grid" style="margin-top:18px;">
+    <section class="card">
+      <h2>1. Live Object Detection từ camera</h2>
+      <div class="two">
+        <div>
+          <label>Nguồn camera</label>
+          <input id="source" type="text" value="0" />
+          <small>0 = camera laptop. Có thể nhập URL IP camera nếu có.</small>
+        </div>
+        <div>
+          <label>Confidence threshold</label>
+          <input id="conf" type="number" min="0.01" max="0.99" step="0.05" value="0.35" />
+          <small>Thử 0.25, 0.50, 0.70 để thấy số bbox thay đổi.</small>
+        </div>
+      </div>
+      <label>Lọc class quan tâm (tùy chọn)</label>
+      <input id="classes" type="text" placeholder="Ví dụ: person,bottle,cell phone,laptop" />
+      <div class="row">
+        <button class="green" onclick="startStream()">Bật stream nhận diện</button>
+        <button class="danger" onclick="stopStream()">Dừng stream</button>
+        <button class="orange" onclick="snapshotDetect()">Chụp từ camera và Detect</button>
+        <button class="secondary" onclick="loadModelInfo()">Model info</button>
+      </div>
+      <div class="stream-wrap">
+        <img id="streamImg" alt="Object detection stream" />
+        <div id="streamPlaceholder" class="placeholder">Stream chưa bật. Bấm “Bật stream nhận diện”, sau đó đưa người/vật thể vào trước camera.</div>
+      </div>
+      <h3>Gợi ý quan sát</h3>
+      <span class="pill">Đưa chai nước / điện thoại / sách trước camera</span>
+      <span class="pill">Thay đổi threshold</span>
+      <span class="pill">Lọc class person hoặc bottle</span>
+      <span class="pill">Quan sát bbox và confidence</span>
+    </section>
+
+    <aside class="card">
+      <h2>2. Upload ảnh hoặc dùng ảnh mẫu</h2>
+      <label>Upload ảnh</label>
+      <input id="file" type="file" accept="image/*" />
+      <button onclick="uploadDetect()">Upload và Detect</button>
+      <h3>Ảnh mẫu</h3>
+      <button onclick="detectSample('sample_objects.jpg')">Detect sample_objects.jpg</button>
+      <button onclick="detectSample('sample_low_light.jpg')">Detect sample_low_light.jpg</button>
+      <button onclick="runThresholdExperiment()">Chạy thử threshold 0.25 / 0.50 / 0.70</button>
+      <h3>Trạng thái</h3>
+      <pre id="statusBox">Sẵn sàng.</pre>
+    </aside>
+  </div>
+
+  <div class="grid" style="margin-top:18px;">
+    <section class="card">
+      <h2>3. Kết quả trực quan</h2>
+      <div class="imgs">
+        <div>
+          <h3>Ảnh đầu vào</h3>
+          <img id="inputImage" alt="input image" />
+        </div>
+        <div>
+          <h3>Ảnh có bounding box</h3>
+          <img id="annotatedImage" alt="annotated image" />
+        </div>
+      </div>
+    </section>
+    <section class="card">
+      <h2>4. Detection và Visual Event</h2>
+      <div id="summary"></div>
+      <h3>JSON response</h3>
+      <pre id="jsonBox">Chưa có kết quả.</pre>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:18px;">
+    <h2>5. Log để hiểu hệ thống</h2>
+    <button onclick="refreshLogs()">Refresh detection/event log</button>
+    <div class="two">
+      <div>
+        <h3>Detection log</h3>
+        <div id="detectionTable"></div>
+      </div>
+      <div>
+        <h3>Vision event log</h3>
+        <div id="eventTable"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+function getConf(){ return document.getElementById('conf').value || '0.35'; }
+function getSource(){ return encodeURIComponent(document.getElementById('source').value || '0'); }
+function getClasses(){ return encodeURIComponent(document.getElementById('classes').value || ''); }
+function setStatus(obj){ document.getElementById('statusBox').textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); }
+function showResult(data){
+  document.getElementById('jsonBox').textContent = JSON.stringify(data, null, 2);
+  if(data.input_image_url){ document.getElementById('inputImage').src = data.input_image_url + '?t=' + Date.now(); }
+  if(data.annotated_image_url){ document.getElementById('annotatedImage').src = data.annotated_image_url + '?t=' + Date.now(); }
+  let detRows = (data.detections || []).map(d => `<tr><td>${d.class_name}</td><td>${d.confidence}</td><td>${JSON.stringify(d.bbox)}</td></tr>`).join('');
+  if(!detRows) detRows = '<tr><td colspan="3">Không có object trên threshold hiện tại</td></tr>';
+  document.getElementById('summary').innerHTML = `
+    <p><b>Model:</b> ${data.model_status?.backend || ''} | <b>Threshold:</b> ${data.threshold_used} | <b>Latency:</b> ${data.inference_time_ms} ms</p>
+    <p><b>Event:</b> ${data.event?.event_type || ''} | <b>Severity:</b> ${data.event?.severity || ''}</p>
+    <table><thead><tr><th>Class</th><th>Confidence</th><th>Bounding box</th></tr></thead><tbody>${detRows}</tbody></table>`;
+  refreshLogs();
+}
+function startStream(){
+  const src = `/video_feed?source=${getSource()}&conf=${getConf()}&classes=${getClasses()}&t=${Date.now()}`;
+  const img = document.getElementById('streamImg');
+  img.src = src; img.style.display = 'block';
+  document.getElementById('streamPlaceholder').style.display = 'none';
+  setStatus('Đã bật stream. Hãy đưa vật thể vào trước camera và quan sát bbox/confidence.');
+}
+function stopStream(){
+  const img = document.getElementById('streamImg');
+  img.removeAttribute('src'); img.style.display = 'none';
+  document.getElementById('streamPlaceholder').style.display = 'block';
+  setStatus('Đã dừng stream.');
+}
+async function snapshotDetect(){
+  setStatus('Đang chụp từ camera và detect...');
+  const res = await fetch(`/snapshot-detect?source=${getSource()}&conf=${getConf()}&classes=${getClasses()}`);
+  const data = await res.json(); showResult(data); setStatus(data);
+}
+async function uploadDetect(){
+  const f = document.getElementById('file').files[0];
+  if(!f){ setStatus('Cần chọn file ảnh trước.'); return; }
+  const fd = new FormData(); fd.append('file', f);
+  const res = await fetch(`/upload-detect?conf=${getConf()}&classes=${getClasses()}`, {method:'POST', body:fd});
+  const data = await res.json(); showResult(data); setStatus(data);
+}
+async function detectSample(name){
+  const res = await fetch(`/detect-sample?sample=${encodeURIComponent(name)}&conf=${getConf()}&classes=${getClasses()}`);
+  const data = await res.json(); showResult(data); setStatus(data);
+}
+async function runThresholdExperiment(){
+  const res = await fetch(`/threshold-experiment?sample=sample_objects.jpg&classes=${getClasses()}`);
+  const data = await res.json(); setStatus(data); await refreshLogs();
+}
+async function loadModelInfo(){
+  const res = await fetch('/model-info'); const data = await res.json(); setStatus(data);
+}
+function tableFrom(items, cols){
+  if(!items || items.length === 0) return '<p>Chưa có dữ liệu.</p>';
+  const head = cols.map(c=>`<th>${c}</th>`).join('');
+  const rows = items.slice().reverse().map(row => `<tr>${cols.map(c=>`<td>${row[c] ?? ''}</td>`).join('')}</tr>`).join('');
+  return `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+async function refreshLogs(){
+  const d = await (await fetch('/detections?limit=10')).json();
+  const e = await (await fetch('/vision-events?limit=10')).json();
+  document.getElementById('detectionTable').innerHTML = tableFrom(d.items, ['timestamp','class_name','confidence','threshold_used','inference_time_ms']);
+  document.getElementById('eventTable').innerHTML = tableFrom(e.items, ['timestamp','event_type','severity','class_name','confidence']);
+}
+refreshLogs();
+</script>
+</body>
+</html>

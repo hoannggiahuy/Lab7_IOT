@@ -1,0 +1,13 @@
+detection_id,image_id,timestamp,source_type,model_name,model_version,threshold_used,class_name,confidence,bbox_x1,bbox_y1,bbox_x2,bbox_y2,inference_time_ms,annotated_image_path
+det_32a489656d,img_551c969269,2026-06-15T09:16:36,demo_script,fallback_contour_detector,fallback_v1,0.25,visual_object,0.9376,69,109,212,332,22.12,data/annotated_images/img_551c969269_detected.jpg
+det_fec4a94456,img_551c969269,2026-06-15T09:16:36,demo_script,fallback_contour_detector,fallback_v1,0.25,visual_object,0.4604,340,140,481,281,22.12,data/annotated_images/img_551c969269_detected.jpg
+det_66656cc364,img_6128fab229,2026-06-16T08:07:42,demo_script,yolov8n.pt,lab7_yolo_nano_v1,0.25,frisbee,0.3897,340,140,480,281,356.46,data\annotated_images\img_6128fab229_detected.jpg
+det_8c5017b15b,img_b085aebbbb,2026-06-16T08:16:57,demo_script,yolov8n.pt,lab7_yolo_nano_v1,0.25,frisbee,0.3897,340,140,480,281,785.69,data\annotated_images\img_b085aebbbb_detected.jpg
+det_d8d47e8cc0,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,person,0.8195,47,94,583,479,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_5e07e6f7e1,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,cell phone,0.7951,238,95,415,315,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_8d03296824,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,person,0.7215,52,391,128,462,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_08b0b9e063,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,person,0.7106,0,371,66,460,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_f8fc4055b1,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,person,0.6252,0,397,33,479,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_302703aa4a,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,person,0.5838,568,367,639,479,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_8f87207f2a,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,cell phone,0.366,241,105,352,325,402.45,data\annotated_images\img_ab13105280_detected.jpg
+det_320d2b2871,img_ab13105280,2026-06-16T08:21:24,camera,yolov8n.pt,lab7_yolo_nano_v1,0.35,cell phone,0.3633,240,102,334,226,402.45,data\annotated_images\img_ab13105280_detected.jpg
